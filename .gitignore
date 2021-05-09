@@ -1,2 +1,11 @@
 .ipynb_checkpoints/
 *.ipynb
+out.txt
+erro.txt
+utils/__pycache__
+runs/
+upload/
+.idea/
+.DS_Store
+logs/
+pyserini/*
