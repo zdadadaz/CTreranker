@@ -1,7 +1,9 @@
 from pyserini.search import SimpleSearcher
 from utils import writefile as wf
 from utils import demographic as dg
+from utils.gendata import Dataset
 import os
+import torch
 
 class Tradquery():
     def __init__(self, query_dict, qids, indexing_path, output_path, bm25_k, bert_k, run_name, suffix):
@@ -43,3 +45,20 @@ class Tradquery():
 
         # wf.write_hits(self.topklist, os.path.join(self.output_path, 'pyserini_dev_{}_{}_{}'.format(self.run_name, self.bert_k, self.suffix)), run_name=self.run_name)
 
+def runIRmethod(tokenizer, dataidx, query_dict, qrel_dict, indexing_path, output, bm25_k, bert_k, IR_method, batch_size, num_workers, device):
+    dataloaders = {}
+    # BM25
+    for phase in dataidx:
+        if len(dataidx[phase]) == 0:
+            continue
+        bm25 = Tradquery(query_dict, dataidx[phase], indexing_path, output, bm25_k, bert_k, IR_method, phase)
+        dataset = Dataset(tokenizer, dataidx[phase], query_dict, qrel_dict, bm25.topklist, bm25.fields, bm25.searcher,
+                          phase)
+        if phase == 'test':
+            dataloaders[phase] = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=num_workers,
+                                                             pin_memory=(device.type == "cuda"))
+        else:
+            dataloaders[phase] = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=num_workers,
+                                                             shuffle=True, pin_memory=(device.type == "cuda"),
+                                                             drop_last=True)
+    return dataloaders

@@ -1,5 +1,4 @@
 import torch
-import math
 import os
 import time
 import sklearn
@@ -8,19 +7,29 @@ import tqdm
 import numpy as np
 from utils import readfile as rf
 from utils import writefile as wf
+from transformers.optimization import get_linear_schedule_with_warmup
+from transformers import AdamW
+import math
+
 
 class trainer():
-    def __init__(self, model, output, batch_size, num_epochs, dataloaders, device, lr_step_period=None):
+    def __init__(self, model, output, batch_size, num_epochs, dataloaders, device, isFineTune, lr):
         self.model = model
         self.output = output
         self.num_epochs = num_epochs
         self.batch_size = batch_size
         self.dataloaders = dataloaders
         self.device = device
-        self.optim = torch.optim.SGD(model.parameters(), lr=1e-4, momentum=0.9, weight_decay=1e-4)
-        if lr_step_period is None:
-            lr_step_period = math.inf
-        self.scheduler = torch.optim.lr_scheduler.StepLR(self.optim, lr_step_period)
+        self.isFineTune =isFineTune
+        self.best_name = "best_ft.pt" if isFineTune else "best.pt"
+        # self.optim = torch.optim.SGD(model.parameters(), lr=1e-4, momentum=0.9, weight_decay=1e-4)
+        self.optim = AdamW(model.parameters(), lr=lr, correct_bias=False) # 2e-5
+        num_warmup_steps = int(len(dataloaders['train'])*0.1)
+        num_training_steps = int(len(dataloaders['train'])*0.9)+1
+        if isFineTune:
+            self.scheduler = get_linear_schedule_with_warmup(self.optim, num_warmup_steps=num_warmup_steps, num_training_steps=num_training_steps)
+        else:
+            self.scheduler = torch.optim.lr_scheduler.StepLR(self.optim, math.inf)
 
     def _train_init_(self, f):
         epoch_resume = 0
@@ -44,7 +53,11 @@ class trainer():
 
     def train(self):
         with open(os.path.join(self.output, "log.csv"), "a") as f:
-            epoch_resume, bestLoss = self._train_init_(f)
+            epoch_resume, bestLoss = 0, float("inf")
+            if not self.isFineTune:
+                epoch_resume, bestLoss = self._train_init_(f)
+            else:
+                f.write("Starting fine-tune from trained best\n")
             # Train one epoch
             for epoch in range(epoch_resume, self.num_epochs):
                 print("Epoch #{}".format(epoch), flush=True)
@@ -53,8 +66,8 @@ class trainer():
                         continue
                     start_time = time.time()
                     for i in range(torch.cuda.device_count()):
-                        torch.cuda.reset_max_memory_allocated(i)
-                        torch.cuda.reset_max_memory_cached(i)
+                        torch.cuda.reset_peak_memory_stats(i)
+                        torch.cuda.reset_peak_memory_stats(i)
                     loss, yhat, y, _ = self.run_epoch(self.model, self.dataloaders[phase], phase, self.optim, self.device)
                     f.write("{},{},{},{},{},{},{},{}\n".format(epoch,
                                                                  phase,
@@ -67,7 +80,6 @@ class trainer():
                                                                  ))
                     f.flush()
 
-                self.scheduler.step()
 
                 save = {
                     'epoch': epoch,
@@ -79,11 +91,12 @@ class trainer():
                     'scheduler_dict': self.scheduler.state_dict(),
                 }
                 torch.save(save, os.path.join(self.output, "checkpoint.pt"))
+
                 if loss < bestLoss:
-                    torch.save(save, os.path.join(self.output, "best.pt"))
+                    torch.save(save, os.path.join(self.output, self.best_name))
                     bestLoss = loss
 
-            checkpoint = torch.load(os.path.join(self.output, "best.pt"))
+            checkpoint = torch.load(os.path.join(self.output, self.best_name))
             self.model.load_state_dict(checkpoint['state_dict'])
             f.write("Best validation loss {} from epoch {}\n".format(checkpoint["loss"], checkpoint["epoch"]))
             f.flush()
@@ -119,7 +132,10 @@ class trainer():
                     if phase == 'train':
                         optim.zero_grad()
                         loss.backward()
+                        if self.isFineTune:
+                            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                         optim.step()
+                        self.scheduler.step()
 
                     runningloss += loss.item() * X.size(0)
                     counter += X.size(0)
@@ -133,8 +149,8 @@ class trainer():
         qdoc = np.concatenate(qdoc)
         return epoch_loss, yhat, y, qdoc
 
-    def test(self, qids, qrels, path_to_test_result, path_to_qrels, k, input_run_name, output_run_name):
-        checkpoint = torch.load(os.path.join(self.output, "best.pt"))
+    def test(self, qids, qrels, path_to_test_result, path_to_qrels, k, output_run_name):
+        checkpoint = torch.load(os.path.join(self.output, self.best_name))
         self.model.load_state_dict(checkpoint['state_dict'])
         with open(os.path.join(self.output, "log.csv"), "a") as f:
             for phase in ["val", "test"]:
@@ -145,9 +161,10 @@ class trainer():
                     f.flush()
         org_res = rf.read_result(path_to_test_result)
         rerank = self._gen_trec_ouput( yhat, qdoc, k)
-        out_path = path_to_test_result.replace(input_run_name,output_run_name)[:-4]
+        out_path = '/'.join(path_to_test_result.split('/')[:-1])+'/'+output_run_name
         wf.write_rerank_res(org_res, rerank, k, output_run_name, out_path)
         wf.write_qrels(qids, qrels, path_to_qrels)
+
 
     def _gen_trec_ouput(self, yhat, qdoc, k):
         res = {}
@@ -164,3 +181,5 @@ class trainer():
                 res[qid]['score'].append(str(round(score,4)))
                 cnt+=1
         return res
+
+

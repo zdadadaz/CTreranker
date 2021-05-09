@@ -1,10 +1,9 @@
 import torch
 from utils.demographic import _json2bert
 import json
-from transformers import BertTokenizer
 
 class Dataset(torch.utils.data.Dataset):
-    def __init__(self, idxlist, query_dict, qrel_dict, hits, fields, searcher, phase):
+    def __init__(self, tokenizer, idxlist, query_dict, qrel_dict, hits, fields, searcher, phase):
         self.qids = []
         self.queries = []
         self.query_dict = query_dict
@@ -20,7 +19,7 @@ class Dataset(torch.utils.data.Dataset):
         X, Xdoc, self.y, self.QDoc = self._genXypair_4testing()
         # else:
         # X, Xdoc, self.y = self._genXypair_4training()
-        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        # tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         self.encodings = tokenizer(X, Xdoc, return_tensors='pt', padding=True, truncation=True, max_length=256)
 
 

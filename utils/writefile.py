@@ -10,9 +10,8 @@ def write_hits(hits, output_path, excludeZero = False, run_name='noName'):
             if (not excludeZero) or (hit.score > 0.0001):
                 trec.append(str(qid) + "\tQ0\t"+str(hit.docid) + "\t"+ str(cnt) +"\t"+str(hit.score)+ "\t" +run_name+"\n")
                 cnt+=1
-
     trec.sort(key=lambda k: int(k.split("\t")[0]))
-    with open(output_path+'.res', "a+") as f:
+    with open(output_path+'.res', "w") as f:
         f.writelines(trec)
 
 def write_rerank_res(org, rerank, k, run_name, output_path):
@@ -29,7 +28,7 @@ def write_rerank_res(org, rerank, k, run_name, output_path):
                 org[qid]['score'][kid] + "\t" + run_name + "\n")
 
     trec.sort(key=lambda k: int(k.split("\t")[0]))
-    with open(output_path + '.res', "a+") as f:
+    with open(output_path + '.res', "w") as f:
         f.writelines(trec)
 
 def write_qrels(qids, qrels, out_path):
@@ -42,6 +41,6 @@ def write_qrels(qids, qrels, out_path):
                 qrel_out.append(text)
 
     qrel_out.sort(key=lambda k: int(k.split(" ")[0]))
-    with open(out_path, "a+") as f:
+    with open(out_path, "w") as f:
         f.writelines(qrel_out)
 
