@@ -3,7 +3,7 @@
 #SBATCH --job-name=jc_run_cpu
 #SBATCH -n 1
 #SBATCH -w gpunode-1-14
-#SBATCH --time=02:00:00
+#SBATCH --time=20:00:00
 #SBATCH --mem-per-cpu=30G
 #SBATCH -o out.txt
 #SBATCH -e erro.txt

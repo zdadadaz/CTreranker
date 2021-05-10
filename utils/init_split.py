@@ -19,3 +19,4 @@ def split(eval_year, isFinetune):
 
     dataidx = {'train': train_idx,'val':val_idx,'test':test_idx}
     return dataidx
+

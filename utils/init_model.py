@@ -11,12 +11,20 @@ def model_init(device, pretrained, isFinetune, output):
     if pretrained == 'base':
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         model = BertForSequenceClassification.from_pretrained("bert-base-uncased")
-    elif pretrained=='BlueBERT':
-        tokenizer = AutoTokenizer.from_pretrained("../../model/BlueBERT")
-        model = AutoModel.from_pretrained("../../model/BlueBERT")
-    elif pretrained=='BioBERT':
+    elif pretrained == 'BlueBERT':
+        tokenizer = AutoTokenizer.from_pretrained("bionlp/bluebert_pubmed_mimic_uncased_L-12_H-768_A-12")
+        model = AutoModel.from_pretrained("bionlp/bluebert_pubmed_mimic_uncased_L-12_H-768_A-12")
+    elif pretrained == 'BioBERT':
+        tokenizer = AutoTokenizer.from_pretrained("dmis-lab/biobert-base-cased-v1.1")
+        model = AutoModel.from_pretrained("dmis-lab/biobert-base-cased-v1.1")
+    elif pretrained == 'ClinicalBERT':
         tokenizer = AutoTokenizer.from_pretrained("emilyalsentzer/Bio_ClinicalBERT")
         model = AutoModel.from_pretrained("emilyalsentzer/Bio_ClinicalBERT")
+    elif pretrained == 'SciBERT':
+        tokenizer = AutoTokenizer.from_pretrained("allenai/scibert_scivocab_cased")
+        model = AutoModel.from_pretrained("allenai/scibert_scivocab_cased")
+    else:
+        raise Exception("Not matched pretrained model")
 
     model.classifier = torch.nn.Linear(model.classifier.in_features, 1)
     model.classifier.bias.data[0] = 0.5
@@ -24,10 +32,16 @@ def model_init(device, pretrained, isFinetune, output):
     checkpoint = None
     if isFinetune:  # load best model to fine tune
         checkpoint = torch.load(os.path.join(output, "best.pt"))['state_dict']
+        try:
+            model.load_state_dict(checkpoint)
+        except:
+            raise Exception("{} pretrained key not match".format(pretrained))
         for name, param in model.named_parameters():
-            if 'module.'+name in checkpoint:
-                param = checkpoint['module.'+name]
             param.requires_grad = True
+        #     if 'module.'+name in checkpoint :
+        #         param = checkpoint['module.'+name]
+        #     else:
+        #         print('name {} not in checkpoint', name)
     else: # dont update bert
         for name, param in model.named_parameters():
             if name.startswith('bert'):
