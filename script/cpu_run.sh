@@ -17,6 +17,6 @@ module load mvapich2
 cd /scratch/itee/s4575321/code/ct_reranker
 # srun python3 -m pip freeze
 # srun python3 simpletest.py
-srun python3 xml2jsonl.py
+srun python3 xml2jsonl.py ../../data/TRECPM2019/clinicaltrials_xml/ ../../data/TRECPM2019/clinicaltrials_json_bt/
 cd /scratch/itee/s4575321/code/pyserini
-srun python3 -m pyserini.index -collection JsonCollection -generator DefaultLuceneDocumentGenerator -threads 4 -input /scratch/itee/s4575321/data/TRECPM2019/clinicaltrials_json_bt -index indexes/TRECPM -storePositions -storeDocvectors -storeRaw
+srun python3 -m pyserini.index -collection JsonCollection -generator DefaultLuceneDocumentGenerator -threads 4 -input /scratch/itee/s4575321/data/TRECPM2019/clinicaltrials_json_bt -index indexes/TRECPM2019 -storePositions -storeDocvectors -storeRaw

@@ -1,6 +1,26 @@
 from sklearn.model_selection import train_test_split
+import numpy as np
+from sklearn.model_selection import KFold
 
-def split(eval_year, isFinetune):
+
+def split(iscv, isFinetune):
+    if iscv == 'cv':
+        return split_cv(5)
+    else:
+        return split_year(iscv, isFinetune)
+
+
+def split_cv(numfold):
+    topics = np.array([i for i in range(1, 118)])
+    kf = KFold(n_splits=numfold, shuffle=True)
+    res = []
+    for train_index, test_index in kf.split(topics):
+        dataidx = {'train': topics[train_index],'val':[],'test':topics[test_index]}
+        res.append(dataidx)
+    return res
+
+
+def split_year(eval_year, isFinetune):
     # train 17, 18, test 19
      # qbyyear = [[1, 29], [30, 79], [80, 117]]
     val_idx = []

@@ -33,15 +33,15 @@ class Tradquery():
 
     def search(self):
         self.searcher.set_bm25(self.coef[0], self.coef[1])
-        hits = self.searcher.batch_search(self.queries, self.qids, self.bm25_k, self.thread, None, self.fields)
+        self.hits = self.searcher.batch_search(self.queries, self.qids, self.bm25_k, self.thread, None, self.fields)
         out_path = os.path.join(self.output_path, 'pyserini_dev_{}_{}_{}'.format(self.run_name, str(self.bm25_k), self.suffix))
-        wf.write_hits(hits, out_path, run_name=self.run_name)
+        wf.write_hits(self.hits, out_path, run_name=self.run_name)
 
         # demographic filter
-        dg.filter(self.query_dict, hits)
+        dg.filter(self.query_dict, self.hits)
         out_path = os.path.join(self.output_path, 'pyserini_dev_demofilter_{}_{}_{}'.format(self.run_name, str(self.bm25_k),  self.suffix))
-        wf.write_hits(hits, out_path,excludeZero = True, run_name=self.run_name)
-        self.topklist = dg.topkrank_hit(hits, self.bert_k, self.fields)
+        wf.write_hits(self.hits, out_path,excludeZero = True, run_name=self.run_name)
+        self.topklist = dg.topkrank_hit(self.hits, self.bert_k, self.fields)
 
         # wf.write_hits(self.topklist, os.path.join(self.output_path, 'pyserini_dev_{}_{}_{}'.format(self.run_name, self.bert_k, self.suffix)), run_name=self.run_name)
 
@@ -52,8 +52,7 @@ def runIRmethod(tokenizer, dataidx, query_dict, qrel_dict, indexing_path, output
         if len(dataidx[phase]) == 0:
             continue
         bm25 = Tradquery(query_dict, dataidx[phase], indexing_path, output, bm25_k, bert_k, IR_method, phase)
-        dataset = Dataset(tokenizer, dataidx[phase], query_dict, qrel_dict, bm25.topklist, bm25.fields, bm25.searcher,
-                          phase)
+        dataset = Dataset(tokenizer, dataidx[phase], query_dict, qrel_dict, bm25.fields, bm25, phase)
         if phase == 'test':
             dataloaders[phase] = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=num_workers,
                                                              pin_memory=(device.type == "cuda"))

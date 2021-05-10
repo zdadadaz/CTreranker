@@ -6,11 +6,11 @@ import platform
 def eval_set(qrel, res, output = None):
     # qrel = 'output/2019_bm25_BERT_pretrained_base/test_qrels.txt'
     # res = 'output/2019_bm25_BERT_pretrained_base/pyserini_dev_demofilter_bm25_1000_test.res'
-    # cmd = '../trec_eval-9.0.7/trec_eval -m set {} {}'.format(qrel, res)
-    # os.system(cmd)
+    cmd = '../trec_eval-9.0.7/trec_eval -m map -m P.5 -m P.10 {} {}'.format(qrel, res)
+    os.system(cmd)
 
 
-    cmd = ['../trec_eval-9.0.7/trec_eval','-m', 'map','-m', 'ndcg','-m', 'P.5','-m', 'P.10','-m','Rprec','-m','recip_rank', qrel, res]
+    cmd = ['../trec_eval-9.0.7/trec_eval','-m', 'map', '-m', 'P.5', '-m', 'P.10', '-m', 'ndcg' ,'-m','Rprec','-m','recip_rank', qrel, res]
     shell = platform.system() == "Windows"
     process = subprocess.Popen(cmd,
                                stdout=subprocess.PIPE,

@@ -14,7 +14,7 @@ def argretrieve():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_name', help="model_name")
     parser.add_argument('--pretrained', help="base, BlueBERT, ClinicalBERT, BioBERT, SciBERT")
-    parser.add_argument('--year', help="choose eval year 2017-2019")
+    parser.add_argument('--year', help="choose eval year 2017, 2018, 2019 or cv")
     parser.add_argument('--irmethod', help="bm25 or DFR", default='bm25')
     parser.add_argument('--bert_k', help="bert k", default=50)
     parser.add_argument('--lr', help="lr", default=None)
@@ -22,7 +22,6 @@ def argretrieve():
     parser.add_argument('--num_workers', help="num_workers", default=4)
     parser.add_argument('--isFinetune', help="is fine-tune", default=0)
     parser.add_argument('--num_epochs', help="num of epoch", default=1)
-    parser.add_argument('--path_to_pretrain', help="path to trained model", default=None)
     return parser.parse_args()
 
 def main():
@@ -40,12 +39,10 @@ def main():
     eval_year = args.year  # '2019'
     ir_method = args.irmethod + '_ft' if isFinetune else args.irmethod # 'bm25'
     modelname = args.model_name
-    path_to_trained_model = args.path_to_pretrain
     bm25_k = 1000
 
     device, output = None, None
 
-    assert eval_year == '2017' or eval_year == '2018' or eval_year == '2019'
 
     # need combine 2017-2019 as a whole query
     topics_nums_by_year = [29,50,38]
@@ -66,22 +63,25 @@ def main():
     pathlib.Path(output).mkdir(parents=True, exist_ok=True)
 
     # Initialization model
-    device, tokenizer, model = init_model.model_init(device, pretrained, isFinetune, output, path_to_trained_model)
+    device, tokenizer, model = init_model.model_init(device, pretrained, isFinetune, output)
 
     # train val test split
-    dataidx = init_split.split(eval_year, isFinetune)
+    dataidx_list = init_split.split(eval_year, isFinetune)
 
-    # run IR method
-    dataloaders = runIRmethod(tokenizer, dataidx, query_dict, qrel_dict, indexing_path, output, bm25_k, bert_k, ir_method, batch_size,
-                num_workers, device)
+    for i, dataidx in enumerate(dataidx_list):
+        # run IR method
+        outputcv = os.path.join(output, 'cv'+str(i))
+        dataloaders = runIRmethod(tokenizer, dataidx, query_dict, qrel_dict, indexing_path, outputcv, bm25_k, bert_k, ir_method, batch_size,
+                    num_workers, device)
 
-    trainBERT = trainer(model, output, batch_size, num_epochs, dataloaders, device, isFinetune, lr)
-    trainBERT.train()
-    test_out_path = os.path.join(output, 'pyserini_dev_demofilter_{}_{}_{}.res'.format(ir_method,str(bm25_k), 'test'))
-    qrel_out_path = '/'.join(test_out_path.split('/')[:-1])+'/test_qrels.txt'
-    trainBERT.test(dataidx['test'], qrel_dict, test_out_path, qrel_out_path, bert_k, modelname +'_ft' if isFinetune else modelname)
-    bert_out_path = '/'.join(test_out_path.split('/')[:-1])+'/'+ (modelname +'_ft' if isFinetune else modelname) + '.res'
-    trec_eval.eval_set(qrel_out_path, bert_out_path, output)
+        trainBERT = trainer(model, outputcv, batch_size, num_epochs, dataloaders, device, isFinetune, lr)
+        trainBERT.train()
+        test_out_path = os.path.join(outputcv, 'pyserini_dev_demofilter_{}_{}_{}.res'.format(ir_method,str(bm25_k), 'test'))
+        qrel_out_path = '/'.join(test_out_path.split('/')[:-1])+'/test_qrels.txt'
+        trainBERT.test(dataidx['test'], qrel_dict, test_out_path, qrel_out_path, bert_k, modelname +'_ft' if isFinetune else modelname)
+        bert_out_path = '/'.join(test_out_path.split('/')[:-1])+'/'+ modelname +'_ft' if isFinetune else modelname
+        bert_out_path += '.res'
+        trec_eval.eval_set(qrel_out_path, bert_out_path, outputcv)
 
 if __name__ == '__main__':
     main()

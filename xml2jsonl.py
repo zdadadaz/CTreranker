@@ -6,7 +6,7 @@ import re
 import argparse
 from multiprocessing import Pool, cpu_count
 
-year = '2019'
+year = '2017'
 def save_json(f):
     fn = f.split('/')[-1][:-4]
     out_path = '/'.join(f.replace('clinicaltrials_xml', 'clinicaltrials_json_bt').split('/')[:-1])
