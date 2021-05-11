@@ -24,7 +24,7 @@ def model_init(device, pretrained, isFinetune, output, path_to_trained_model):
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         model = BertForSequenceClassification.from_pretrained("bert-base-uncased")
         model.classifier = torch.nn.Linear(model.classifier.in_features, 1)
-        model.classifier.bias.data[0] = 0.5
+        # model.classifier.bias.data[0] = 0.5
     elif pretrained == 'BlueBERT':
         tokenizer = AutoTokenizer.from_pretrained("bionlp/bluebert_pubmed_mimic_uncased_L-12_H-768_A-12")
         bert = AutoModel.from_pretrained("bionlp/bluebert_pubmed_mimic_uncased_L-12_H-768_A-12")

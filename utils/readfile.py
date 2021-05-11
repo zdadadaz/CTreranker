@@ -83,3 +83,16 @@ def read_result(path_to_result)->dict:
         res[qid]['rank'].append(rank)
         res[qid]['score'].append(score)
     return res
+
+
+def read_eval(path_to_eval):
+    assert path_to_eval.strip().split(".")[-1] == 'eval'
+
+    res = {}
+    with open(path_to_eval, 'r') as f:
+        contents = f.readlines()
+
+    for line in contents:
+        m, value = line.strip().split("\t")
+        res[m] = value
+    return res

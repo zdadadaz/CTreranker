@@ -44,3 +44,12 @@ def write_qrels(qids, qrels, out_path):
     with open(out_path, "w") as f:
         f.writelines(qrel_out)
 
+def write_eval(eval, out_path):
+    out = []
+    for m in eval.keys():
+        text = m + "\t" + str(eval[m]) + "\n"
+        out.append(text)
+
+    with open(out_path + '.eval', "w") as f:
+        f.writelines(out)
+

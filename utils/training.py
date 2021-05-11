@@ -23,7 +23,6 @@ class trainer():
         self.device = device
         self.isFineTune =isFineTune
         self.best_name = "best_ft.pt" if isFineTune else "best.pt"
-        # self.optim = torch.optim.SGD(model.parameters(), lr=1e-4, momentum=0.9, weight_decay=1e-4)
         self.optim = AdamW(model.parameters(), lr=lr, correct_bias=False) # 2e-5
         num_warmup_steps = int(len(dataloaders['train'])*0.1)
         num_training_steps = int(len(dataloaders['train'])*0.9)+1

@@ -13,10 +13,12 @@ class Dataset(torch.utils.data.Dataset):
         }
         # get data
         self.qids = [str(i) for i in idxlist]
-        if phase == 'test':
-            X, Xdoc, self.y, self.QDoc = self._genXypair_4testing(irclass, query_dict, qrel_dict, fields)
-        else:
+
+        if phase == 'train':
             X, Xdoc, self.y, self.QDoc = self._genXypair_4training(irclass, query_dict, qrel_dict, fields)
+        else:
+            X, Xdoc, self.y, self.QDoc = self._genXypair_4testing(irclass, query_dict, qrel_dict, fields)
+
         self.encodings = tokenizer(X, Xdoc, return_tensors='pt', padding=True, truncation=True, max_length=256)
 
     def _genXypair_4training(self, irclass, query_dict, qrel_dict, fields):

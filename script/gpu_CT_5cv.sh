@@ -8,6 +8,7 @@
 #SBATCH -o out.txt
 #SBATCH -e erro.txt
 #SBATCH --partition=gpu
+#SBATCH --gres=gpu:2
 #SBATCH --cpus-per-task=4
 
 module load anaconda/3.6

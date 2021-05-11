@@ -1,14 +1,14 @@
 from utils import init_model
 from utils.tradquery import runIRmethod
-
 from utils import readfile as rf
-from eval import trec_eval
-import os
-import pathlib
 from utils.training import trainer
 from utils import init_split
+from eval import trec_eval
+import pathlib
 import argparse
 import os
+import numpy as np
+import torch
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
 def argretrieve():
@@ -27,6 +27,9 @@ def argretrieve():
     return parser.parse_args()
 
 def main():
+    seed = 0
+    np.random.seed(seed)
+    torch.manual_seed(seed)
     # modelname = 'bm25_BERT', pretrained = 'base', lr_step_period = None, output = None
     root_path = '../../data/TRECPM2017'
     indexing_path = ['../pyserini/indexes/TRECPM2017', '../pyserini/indexes/TRECPM2019']
@@ -81,7 +84,8 @@ def main():
     qrel_out_path = '/'.join(test_out_path.split('/')[:-1])+'/test_qrels.txt'
     trainBERT.test(dataidx['test'], qrel_dict, test_out_path, qrel_out_path, bert_k, modelname +'_ft' if isFinetune else modelname)
     bert_out_path = '/'.join(test_out_path.split('/')[:-1])+'/'+ (modelname +'_ft' if isFinetune else modelname) + '.res'
-    trec_eval.eval_set(qrel_out_path, bert_out_path, output)
+    trec_eval.eval_set(qrel_out_path, test_out_path, os.path.join(output, ir_method))
+    trec_eval.eval_set(qrel_out_path, bert_out_path, os.path.join(output, modelname))
 
 if __name__ == '__main__':
     main()
