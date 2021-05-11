@@ -8,7 +8,8 @@ import pathlib
 from utils.training import trainer
 from utils import init_split
 import argparse
-
+import os
+os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
 def argretrieve():
     parser = argparse.ArgumentParser()
@@ -28,7 +29,7 @@ def argretrieve():
 def main():
     # modelname = 'bm25_BERT', pretrained = 'base', lr_step_period = None, output = None
     root_path = '../../data/TRECPM2017'
-    indexing_path = '../pyserini/indexes/TRECPM2019'
+    indexing_path = ['../pyserini/indexes/TRECPM2017', '../pyserini/indexes/TRECPM2019']
     args = argretrieve()
     pretrained = args.pretrained
     lr         = float(args.lr)
@@ -74,8 +75,7 @@ def main():
     # run IR method
     dataloaders = runIRmethod(tokenizer, dataidx, query_dict, qrel_dict, indexing_path, output, bm25_k, bert_k, ir_method, batch_size,
                 num_workers, device)
-
-    trainBERT = trainer(model, output, batch_size, num_epochs, dataloaders, device, isFinetune, lr)
+    trainBERT = trainer(model, pretrained, output, batch_size, num_epochs, dataloaders, device, isFinetune, lr)
     trainBERT.train()
     test_out_path = os.path.join(output, 'pyserini_dev_demofilter_{}_{}_{}.res'.format(ir_method,str(bm25_k), 'test'))
     qrel_out_path = '/'.join(test_out_path.split('/')[:-1])+'/test_qrels.txt'

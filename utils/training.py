@@ -13,9 +13,10 @@ import math
 
 
 class trainer():
-    def __init__(self, model, output, batch_size, num_epochs, dataloaders, device, isFineTune, lr):
+    def __init__(self, model, pretrained, output, batch_size, num_epochs, dataloaders, device, isFineTune, lr):
         self.model = model
         self.output = output
+        self.pretrained = pretrained
         self.num_epochs = num_epochs
         self.batch_size = batch_size
         self.dataloaders = dataloaders
@@ -127,8 +128,13 @@ class trainer():
                     outcome = item['labels'].to(device)
                     attention_mask = item['attention_mask'].to(device)
                     outputs = model(X, attention_mask=attention_mask)
-                    yhat.append(outputs.logits.to("cpu").detach().numpy())
-                    loss = criterion(outputs.logits.float(), outcome.unsqueeze(1).float())
+                    if self.pretrained == 'base':
+                        yhat.append(outputs.logits.to("cpu").detach().numpy())
+                        loss = criterion(outputs.logits.float(), outcome.unsqueeze(1).float())
+                    else:
+                        yhat.append(outputs.to("cpu").detach().numpy())
+                        loss = criterion(outputs.float(), outcome.unsqueeze(1).float())
+
                     if phase == 'train':
                         optim.zero_grad()
                         loss.backward()

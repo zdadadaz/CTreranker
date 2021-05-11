@@ -5,14 +5,15 @@ from transformers import AutoTokenizer, AutoModel
 import os
 import torch.nn as nn
 
+
 class SimpleModel(nn.Module):
     def __init__(self, bert):
         super().__init__()
         self.bert = bert
         self.classifier = nn.Linear(768, 1) # for base BERT
 
-    def forward(self, x):
-        x = self.bert(x)
+    def forward(self, x, attention_mask=None):
+        x = self.bert(x, attention_mask=attention_mask)[1]
         return self.classifier(x)
 
 def model_init(device, pretrained, isFinetune, output, path_to_trained_model):
