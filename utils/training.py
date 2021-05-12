@@ -104,9 +104,10 @@ class trainer():
     def run_epoch(self, model, dataloader, phase, optim, device):
         # criterion = torch.nn.MSELoss()  # Standard L2 loss
         criterion = torch.nn.BCEWithLogitsLoss()
+        softmax = torch.nn.Softmax(dim=0)
         runningloss = 0.0
         if phase == 'train':
-            self.model.train(phase == 'train')
+            model.train(True)
         else:
             model.eval()
         counter = 0
@@ -127,12 +128,13 @@ class trainer():
                     outcome = item['labels'].to(device)
                     attention_mask = item['attention_mask'].to(device)
                     outputs = model(X, attention_mask=attention_mask)
+                    logit = softmax(outputs.logits)
                     if self.pretrained == 'base':
-                        yhat.append(outputs.logits.to("cpu").detach().numpy())
-                        loss = criterion(outputs.logits.float(), outcome.unsqueeze(1).float())
+                        yhat.append(logit.to("cpu").detach().numpy())
+                        loss = criterion(logit.float(), outcome.unsqueeze(1).float())
                     else:
-                        yhat.append(outputs.to("cpu").detach().numpy())
-                        loss = criterion(outputs.float(), outcome.unsqueeze(1).float())
+                        yhat.append(logit.to("cpu").detach().numpy())
+                        loss = criterion(logit.float(), outcome.unsqueeze(1).float())
 
                     if phase == 'train':
                         optim.zero_grad()
@@ -141,7 +143,6 @@ class trainer():
                             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                         optim.step()
                         self.scheduler.step()
-
                     runningloss += loss.item() * X.size(0)
                     counter += X.size(0)
                     epoch_loss = runningloss / counter

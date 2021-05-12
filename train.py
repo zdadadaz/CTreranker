@@ -65,6 +65,7 @@ def main():
     query_dict = rf.concat_topics(topics)
     qrel_dict = rf.concat_topics(qrels)
 
+
     if output is None:
         output = os.path.join("output","{}_{}_{}".format(eval_year, modelname, "pretrained_"+pretrained if pretrained else "random"))
     pathlib.Path(output).mkdir(parents=True, exist_ok=True)

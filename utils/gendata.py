@@ -9,8 +9,8 @@ class Dataset(torch.utils.data.Dataset):
         self.qrel_dict = qrel_dict
         fields = {
             # 'contents': 'bt',
-            'bt': 'bt',
-            'bs': 'bs'
+            'bs': 'bs',
+            'bt': 'bt'
         }
         # get data
         self.qids = [str(i) for i in idxlist]
@@ -42,11 +42,12 @@ class Dataset(torch.utils.data.Dataset):
                     resY.append(1)
                     cnt += 1
             tmpcnt = cnt
-            # append negative
+            # append negative from top 1000
             for hit in hits[qid]:
                 # if -cnt > tmpcnt*10: # limit to 10 times of postive case
+                # if cnt < 0:
                 #     break
-                if (hit.docid in y and int(y[hit.docid]) >= 1): # hit.score < 0.0001 or
+                if (hit.docid in y and int(y[hit.docid]) > 0):
                     continue
                 resQDoc.append(qid + hit.docid)
                 resX.append(X)
@@ -75,7 +76,7 @@ class Dataset(torch.utils.data.Dataset):
                 resX.append(X)
                 resDoc.append(_json2bert(json.loads(hit.raw), fields))
                 if y and hit.docid in y:
-                    resY.append(1 if y[hit.docid] > 0 else 0)  #binarize
+                    resY.append(1 if int(y[hit.docid]) > 0 else 0)  #binarize
                 else:
                     resY.append(0)
         return resX, resDoc, resY, resQDoc

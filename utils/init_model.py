@@ -12,7 +12,7 @@ class SimpleModel(nn.Module):
         self.bert = bert
         self.classifier = nn.Linear(768, 1) # for base BERT
 
-    def forward(self, x, attention_mask=None):
+    def forward(self, x, attention_mask = None):
         x = self.bert(x, attention_mask=attention_mask)[1]
         return self.classifier(x)
 

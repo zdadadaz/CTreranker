@@ -56,7 +56,7 @@ class Tradquery():
         out_path = os.path.join(self.output_path, 'pyserini_dev_{}_{}_{}'.format(self.run_name, str(self.bm25_k), self.suffix))
         wf.write_hits(self.hits, out_path, run_name=self.run_name)
 
-        # # demographic filter
+        # demographic filter
         dg.filter(self.query_dict, self.hits)
         out_path = os.path.join(self.output_path, 'pyserini_dev_demofilter_{}_{}_{}'.format(self.run_name, str(self.bm25_k),  self.suffix))
         wf.write_hits(self.hits, out_path, excludeZero = True, run_name=self.run_name)

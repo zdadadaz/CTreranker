@@ -7,7 +7,7 @@ import pathlib
 import json
 
 from pyserini.search import SimpleSearcher
-from pygaggle.rerank.transformer import MonoBERT
+from pygaggle.rerank.transformer import MonoBERT, DuoT5
 # from pygaggle.rerank.base import Query
 
 from transformers import BertTokenizer, BertForSequenceClassification

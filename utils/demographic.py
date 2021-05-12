@@ -24,8 +24,8 @@ def _json2bert(jin, fields):
     out = ''
     for k in fields.keys():
         if k in jin:
-            out += jin[k] + ' '
-            # out += '<{}>'.format(fields[k]) + jin[k]
+            # out += jin[k] + ' '
+            out += '<{}> '.format(fields[k]) + jin[k]
     return out
 
 def topkrank_text(hits, k, fields):
