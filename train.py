@@ -32,7 +32,7 @@ def main():
     torch.manual_seed(seed)
     # modelname = 'bm25_BERT', pretrained = 'base', lr_step_period = None, output = None
     root_path = '../../data/TRECPM2017'
-    indexing_path = ['../pyserini/indexes/TRECPM2017', '../pyserini/indexes/TRECPM2019']
+    indexing_path = ['../pyserini/indexes/TRECPM2017_txt', '../pyserini/indexes/TRECPM2019_txt']
     args = argretrieve()
     pretrained = args.pretrained
     lr         = float(args.lr)

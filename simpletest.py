@@ -7,7 +7,7 @@ import pathlib
 import json
 
 from pyserini.search import SimpleSearcher
-# from pygaggle.rerank.transformer import MonoBERT
+from pygaggle.rerank.transformer import MonoBERT
 # from pygaggle.rerank.base import Query
 
 from transformers import BertTokenizer, BertForSequenceClassification
@@ -50,7 +50,7 @@ def main():
     #     queries.append(query_dict[qid]['text'])
     #
     # run_name = 'bm25'
-    # hits = searcher.batch_search(queries, qids, bm25_k, thread, None, fields)
+    hits = searcher.batch_search(queries, qids, bm25_k, thread, None, fields)
     # wf.write_hits(hits, output_path+'pyserini_dev_bm25_1000', run_name=run_name)
     #
     # # demographic filter

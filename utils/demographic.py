@@ -41,7 +41,7 @@ def topkrank_text(hits, k, fields):
                 cnt += 1
     return res
 
-def topkrank_hit(hits, k, fields):
+def topkrank_hit(hits, k):
     res = {}
     for qid in hits.keys():
         res[qid] = []

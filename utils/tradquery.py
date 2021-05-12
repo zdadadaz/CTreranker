@@ -12,14 +12,7 @@ class Tradquery():
         self.bert_k = bert_k
         self.run_name = run_name
         self.thread = 10
-        self.fields = {
-            'contents': 1.0,
-            'bs': 1.0,
-            'dd': 1.0,
-            'primary_outcome': 1.0,
-            'intervention_name': 1.0,
-            'criteria': 1.0
-        }
+        self.fields = None
         self.suffix = suffix
         self.topklist = None
         self.output_path = output_path
@@ -57,10 +50,8 @@ class Tradquery():
                 if self.qid2indexes[idx] == index:
                     queries.append(self.query_dict[str(idx)]['text'])
                     qids.append(str(idx))
-            hits = searcher.batch_search(queries, qids, self.bm25_k, self.thread, None, self.fields)
+            hits = searcher.batch_search(queries, qids, self.bm25_k, self.thread, None)
             self.hits.update(hits)
-            # self.searcher.set_bm25(self.coef[0], self.coef[1])
-            # self.hits = self.searcher.batch_search(self.queries, self.qids, self.bm25_k, self.thread, None, self.fields)
 
         out_path = os.path.join(self.output_path, 'pyserini_dev_{}_{}_{}'.format(self.run_name, str(self.bm25_k), self.suffix))
         wf.write_hits(self.hits, out_path, run_name=self.run_name)
@@ -69,7 +60,7 @@ class Tradquery():
         dg.filter(self.query_dict, self.hits)
         out_path = os.path.join(self.output_path, 'pyserini_dev_demofilter_{}_{}_{}'.format(self.run_name, str(self.bm25_k),  self.suffix))
         wf.write_hits(self.hits, out_path, excludeZero = True, run_name=self.run_name)
-        self.topklist = dg.topkrank_hit(self.hits, self.bert_k, self.fields)
+        self.topklist = dg.topkrank_hit(self.hits, self.bert_k)
 
 
 def runIRmethod(tokenizer, dataidx, query_dict, qrel_dict, indexing_path, output, bm25_k, bert_k, IR_method, batch_size, num_workers, device):

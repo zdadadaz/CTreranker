@@ -8,7 +8,8 @@ class Dataset(torch.utils.data.Dataset):
         self.query_dict = query_dict
         self.qrel_dict = qrel_dict
         fields = {
-            'contents': 'bt',
+            # 'contents': 'bt',
+            'bt': 'bt',
             'bs': 'bs'
         }
         # get data
@@ -43,9 +44,9 @@ class Dataset(torch.utils.data.Dataset):
             tmpcnt = cnt
             # append negative
             for hit in hits[qid]:
-                if -cnt > tmpcnt*10:
-                    break
-                if hit.score < 0.0001 or (hit.docid in y and y[hit.docid] >= 1):
+                # if -cnt > tmpcnt*10: # limit to 10 times of postive case
+                #     break
+                if (hit.docid in y and int(y[hit.docid]) >= 1): # hit.score < 0.0001 or
                     continue
                 resQDoc.append(qid + hit.docid)
                 resX.append(X)

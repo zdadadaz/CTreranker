@@ -60,11 +60,11 @@ def get_eval_result(output):
         res[name] = rf.read_eval(f)
     return res
 
-def combine_all_eval(output):
+def combine_all_eval(output, include_dirs, outname):
     dirs = [d for r,d,f in os.walk('output') if len(d)>0][0]
     res = {'model':[], 'method':[],'map':[],'Rprec':[], 'recip_rank':[], 'P_5':[], 'P_10':[], 'P_15':[], 'ndcg':[]}
     for d in dirs:
-        if d.split('_')[-1] != 'base' or d == '2019_bm25_BERT_noclip_nowarmup_pretrained_base' or d == '2019_bm25_BERT_noclip_pretrained_base':
+        if d not in include_dirs:
             continue
         tmp = get_eval_result(os.path.join(output, d))
         for i in tmp.keys():
@@ -73,4 +73,4 @@ def combine_all_eval(output):
             for key, value in tmp[i].items():
                 res[key].append(value)
     df = pd.DataFrame.from_dict(res)
-    df.to_csv(os.path.join(output, 'eval.csv'),index=False)
+    df.to_csv(os.path.join(output, outname + '_eval.csv'),index=False)

@@ -9,5 +9,6 @@ outlog = 'output/2019_bm25_BERT_noclip_pretrained_base/bert'
 
 
 tmp = 'output/2017_bm25_BERT_pretrained_base'
-out = trec_eval.combine_all_eval('output')
-print(out)
+dirs = ['{}_bm25_BERT_txt_pretrained_base'.format(str(i)) for i in range(2017,2020)]
+outname = 'txt_base'
+out = trec_eval.combine_all_eval('output', dirs, outname)
