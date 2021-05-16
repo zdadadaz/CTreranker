@@ -1,5 +1,5 @@
 import json
-from pygaggle.rerank.base import Text
+# from pygaggle.rerank.base import Text
 
 def filter(query_dict, hits):
     for qid in hits.keys():
@@ -24,22 +24,22 @@ def _json2bert(jin, fields):
     out = ''
     for k in fields.keys():
         if k in jin:
-            # out += jin[k] + ' '
-            out += '<{}> '.format(fields[k]) + jin[k]
+            out += jin[k] + ' '
+            # out += '<{}> '.format(fields[k]) + jin[k]
     return out
 
-def topkrank_text(hits, k, fields):
-    res = {}
-    for qid in hits.keys():
-        res[qid] = []
-        cnt = 0
-        for hit in hits[qid]:
-            if cnt > k:
-                break
-            if hit.score > 0.000001:
-                res[qid].append(Text(_json2bert(json.loads(hit.raw), fields), {'docid': hit.docid}, 0))
-                cnt += 1
-    return res
+# def topkrank_text(hits, k, fields):
+#     res = {}
+#     for qid in hits.keys():
+#         res[qid] = []
+#         cnt = 0
+#         for hit in hits[qid]:
+#             if cnt > k:
+#                 break
+#             if hit.score > 0.000001:
+#                 res[qid].append(Text(_json2bert(json.loads(hit.raw), fields), {'docid': hit.docid}, 0))
+#                 cnt += 1
+#     return res
 
 def topkrank_hit(hits, k):
     res = {}

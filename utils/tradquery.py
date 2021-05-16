@@ -50,27 +50,28 @@ class Tradquery():
                 if self.qid2indexes[idx] == index:
                     queries.append(self.query_dict[str(idx)]['text'])
                     qids.append(str(idx))
-            hits = searcher.batch_search(queries, qids, self.bm25_k, self.thread, None)
+            hits = searcher.batch_search(queries, qids, self.bm25_k + 500, self.thread, None)
             self.hits.update(hits)
 
         out_path = os.path.join(self.output_path, 'pyserini_dev_{}_{}_{}'.format(self.run_name, str(self.bm25_k), self.suffix))
-        wf.write_hits(self.hits, out_path, run_name=self.run_name)
+        wf.write_hits(self.hits, out_path, self.bm25_k, run_name=self.run_name)
 
         # demographic filter
         dg.filter(self.query_dict, self.hits)
         out_path = os.path.join(self.output_path, 'pyserini_dev_demofilter_{}_{}_{}'.format(self.run_name, str(self.bm25_k),  self.suffix))
-        wf.write_hits(self.hits, out_path, excludeZero = True, run_name=self.run_name)
+        wf.write_hits(self.hits, out_path, self.bm25_k, excludeZero = True, run_name=self.run_name)
         self.topklist = dg.topkrank_hit(self.hits, self.bert_k)
 
 
-def runIRmethod(tokenizer, dataidx, query_dict, qrel_dict, indexing_path, output, bm25_k, bert_k, IR_method, batch_size, num_workers, device):
+
+def runIRmethod(tokenizer, dataidx, query_dict, qrel_dict, indexing_path, output, bm25_k, bert_k, IR_method, batch_size, num_workers, device, num_negative):
     dataloaders = {}
     # BM25
     for phase in dataidx:
         if len(dataidx[phase]) == 0:
             continue
         bm25 = Tradquery(query_dict, dataidx[phase], indexing_path, output, bm25_k, bert_k, IR_method, phase)
-        dataset = Dataset(tokenizer, dataidx[phase], query_dict, qrel_dict, bm25, phase)
+        dataset = Dataset(tokenizer, dataidx[phase], query_dict, qrel_dict, bm25, num_negative, phase)
         if phase == 'test':
             dataloaders[phase] = torch.utils.data.DataLoader(dataset, batch_size=batch_size, num_workers=num_workers,
                                                              pin_memory=(device.type == "cuda"))

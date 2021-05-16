@@ -21,13 +21,14 @@ class trainer():
         self.batch_size = batch_size
         self.dataloaders = dataloaders
         self.device = device
-        self.isFineTune =isFineTune
+        self.isFineTune = isFineTune
         self.best_name = "best_ft.pt" if isFineTune else "best.pt"
-        self.optim = AdamW(model.parameters(), lr=lr, correct_bias=False) # 2e-5
-        num_warmup_steps = int(len(dataloaders['train'])*0.1)
-        num_training_steps = int(len(dataloaders['train'])*0.9)+1
+        self.optim = AdamW(model.parameters(), lr=lr, correct_bias=False)  # 2e-5
+        num_warmup_steps = int(len(dataloaders['train']) * 0.1)
+        num_training_steps = int(len(dataloaders['train']) * 0.9) + 1 + len(dataloaders['train']) * (num_epochs - 1)
         if isFineTune:
-            self.scheduler = get_linear_schedule_with_warmup(self.optim, num_warmup_steps=num_warmup_steps, num_training_steps=num_training_steps)
+            self.scheduler = get_linear_schedule_with_warmup(self.optim, num_warmup_steps=num_warmup_steps,
+                                                             num_training_steps=num_training_steps)
         else:
             self.scheduler = torch.optim.lr_scheduler.StepLR(self.optim, math.inf)
 
@@ -68,18 +69,18 @@ class trainer():
                     for i in range(torch.cuda.device_count()):
                         torch.cuda.reset_peak_memory_stats(i)
                         torch.cuda.reset_peak_memory_stats(i)
-                    loss, yhat, y, _ = self.run_epoch(self.model, self.dataloaders[phase], phase, self.optim, self.device)
+                    loss, yhat, y, _ = self.run_epoch(self.model, self.dataloaders[phase], phase, self.optim,
+                                                      self.device)
                     f.write("{},{},{},{},{},{},{},{}\n".format(epoch,
-                                                                 phase,
-                                                                 loss,
-                                                                 sklearn.metrics.r2_score(yhat, y),
-                                                                 time.time() - start_time,
-                                                                 y.size,
-                                                                 self.batch_size,
-                                                                 self.optim.param_groups[0]['lr']
-                                                                 ))
+                                                               phase,
+                                                               loss,
+                                                               sklearn.metrics.r2_score(yhat, y),
+                                                               time.time() - start_time,
+                                                               y.size,
+                                                               self.batch_size,
+                                                               self.optim.param_groups[0]['lr']
+                                                               ))
                     f.flush()
-
 
                 save = {
                     'epoch': epoch,
@@ -102,9 +103,9 @@ class trainer():
             f.flush()
 
     def run_epoch(self, model, dataloader, phase, optim, device):
-        # criterion = torch.nn.MSELoss()  # Standard L2 loss
-        criterion = torch.nn.BCEWithLogitsLoss()
-        softmax = torch.nn.Softmax(dim=0)
+        # criterion = torch.nn.BCEWithLogitsLoss()
+        criterion = torch.nn.CrossEntropyLoss()
+
         runningloss = 0.0
         if phase == 'train':
             model.train(True)
@@ -117,24 +118,22 @@ class trainer():
         with torch.set_grad_enabled(phase == 'train'):
             with tqdm.tqdm(total=len(dataloader)) as pbar:
                 for (i, item) in enumerate(dataloader):
-                    # tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-                    # decoded = tokenizer.decode(item["input_ids"].numpy()[0])
-                    # print(decoded)
-                    # return
                     y.append(item['labels'].numpy())
                     qdoc.append(np.array(item['qdoc']))
 
                     X = item['input_ids'].to(device)
                     outcome = item['labels'].to(device)
                     attention_mask = item['attention_mask'].to(device)
-                    outputs = model(X, attention_mask=attention_mask)
-                    logit = softmax(outputs.logits)
-                    if self.pretrained == 'base':
-                        yhat.append(logit.to("cpu").detach().numpy())
-                        loss = criterion(logit.float(), outcome.unsqueeze(1).float())
-                    else:
-                        yhat.append(logit.to("cpu").detach().numpy())
-                        loss = criterion(logit.float(), outcome.unsqueeze(1).float())
+                    logit = model(X, attention_mask=attention_mask)
+                    # if self.pretrained == 'base':
+                    #     logit = outputs.logits
+                    # else:
+                    #     logit = outputs
+                    # yhat.append(logit.to("cpu").detach().numpy())
+                    # loss = criterion(logit.float(), outcome.unsqueeze(1).float())
+
+                    yhat.append(torch.softmax(logit, dim=1)[:, 1].cpu().detach().numpy())
+                    loss = criterion(logit.view(-1, 2), outcome.view(-1))
 
                     if phase == 'train':
                         optim.zero_grad()
@@ -163,29 +162,27 @@ class trainer():
                 if phase in self.dataloaders:
                     loss, yhat, y, qdoc = self.run_epoch(self.model, self.dataloaders[phase], phase, None, self.device)
                     f.write("{} R2:   {:.3f} {:.3f} \n".format(phase, loss, sklearn.metrics.r2_score(yhat, y)))
-                    f.write("{} MAE:  {:.2f} {:.2f} \n".format(phase, loss, sklearn.metrics.mean_absolute_error(yhat,y)))
+                    f.write(
+                        "{} MAE:  {:.2f} {:.2f} \n".format(phase, loss, sklearn.metrics.mean_absolute_error(yhat, y)))
                     f.flush()
         org_res = rf.read_result(path_to_test_result)
-        rerank = self._gen_trec_ouput( yhat, qdoc, k)
-        out_path = '/'.join(path_to_test_result.split('/')[:-1])+'/'+output_run_name
+        rerank = self._gen_trec_ouput(yhat, qdoc, k)
+        out_path = '/'.join(path_to_test_result.split('/')[:-1]) + '/' + output_run_name
         wf.write_rerank_res(org_res, rerank, k, output_run_name, out_path)
         wf.write_qrels(qids, qrels, path_to_qrels)
 
-
     def _gen_trec_ouput(self, yhat, qdoc, k):
         res = {}
-        for i in range(0,len(yhat),k):
+        for i in range(0, len(yhat), k):
             qid = qdoc[i].split('NCT')[0]
-            res[qid] = {'docid':[], 'rank':[], 'score':[]}
-            idxlist = sorted(range(i,(i+k)), key=lambda a: -yhat[a])
+            res[qid] = {'docid': [], 'rank': [], 'score': []}
+            idxlist = sorted(range(i, (i + k)), key=lambda a: -yhat[a])
             cnt = 1
             for j in idxlist:
                 score = float(yhat[j])
-                docid = 'NCT'+qdoc[j].split('NCT')[1]
+                docid = 'NCT' + qdoc[j].split('NCT')[1]
                 res[qid]['docid'].append(docid)
                 res[qid]['rank'].append(str(cnt))
-                res[qid]['score'].append(str(round(score,4)))
-                cnt+=1
+                res[qid]['score'].append(str(round(score, 4)))
+                cnt += 1
         return res
-
-

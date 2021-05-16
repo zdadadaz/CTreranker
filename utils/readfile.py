@@ -2,6 +2,7 @@ from tqdm import tqdm
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 
+
 def read_qrel(path_to_qrel) -> dict:
     """
     return a dictionary that maps qid, docid pair to its relevance label.
@@ -23,7 +24,23 @@ def read_qrel(path_to_qrel) -> dict:
 
     return qrel
 
-def read_topics(path_to_topics)->dict:
+
+def read_qrel_list(path_to_qrel) -> dict:
+    """
+    return a dictionary that maps qid, docid pair to its relevance label.
+    """
+    res = []
+    with open(path_to_qrel, 'r') as f:
+        contents = f.readlines()
+
+    for line in contents:
+        if path_to_qrel.strip().split(".")[-1] == 'txt':
+            qid, _, docid, rel = line.strip().split(" ")
+        res.append((qid, docid))
+    return res
+
+
+def read_topics(path_to_topics) -> dict:
     '''
     return a dict that maps qid, content pair
     '''
@@ -41,8 +58,9 @@ def read_topics(path_to_topics)->dict:
                 if 'text' not in topics[idx]:
                     topics[idx]['text'] = c.text
                 else:
-                    topics[idx]['text'] += ' '+c.text
+                    topics[idx]['text'] += ' ' + c.text
     return topics
+
 
 def concat_topics(arr):
     out = {}
@@ -63,7 +81,7 @@ def concat_topics(arr):
     return out
 
 
-def read_result(path_to_result)->dict:
+def read_result(path_to_result) -> dict:
     '''
     return a dict that maps qid ranking result
     '''
@@ -78,10 +96,53 @@ def read_result(path_to_result)->dict:
         if qid in res.keys():
             pass
         else:
-            res[qid] = {'docid':[], 'score':[], 'rank':[] }
+            res[qid] = {'docid': [], 'score': [], 'rank': []}
         res[qid]['docid'].append(docid)
         res[qid]['rank'].append(rank)
         res[qid]['score'].append(score)
+    return res
+
+
+def read_result_topK(path_to_result, qids, k=None) -> dict:
+    '''
+    return a dict that maps qid ranking result
+    '''
+    assert path_to_result.strip().split(".")[-1] == 'res'
+
+    res = {}
+    with open(path_to_result, 'r') as f:
+        contents = f.readlines()
+
+    k = float('inf') if k is None else k
+    for line in tqdm(contents, desc="Loading results"):
+        qid, _, docid, rank, score, name = line.strip().split("\t")
+        if int(rank) > k:
+            continue
+        if qid not in qids:
+            continue
+        if qid in res.keys():
+            pass
+        else:
+            res[qid] = []
+        res[qid].append(docid)
+    return res
+
+def read_result_topK_pair(path_to_result, qids, k=None) -> list:
+    '''
+    return a dict that maps qid ranking result
+    '''
+    assert path_to_result.strip().split(".")[-1] == 'res'
+
+    res = []
+    with open(path_to_result, 'r') as f:
+        contents = f.readlines()
+
+    k = float('inf') if k is None else k
+    for line in tqdm(contents, desc="Loading results"):
+        qid, _, docid, rank, score, name = line.strip().split("\t")
+        if int(rank) > k:
+            continue
+        res.append((qid, docid))
     return res
 
 
@@ -95,4 +156,26 @@ def read_eval(path_to_eval):
     for line in contents:
         m, value = line.strip().split("\t")
         res[m] = value
+    return res
+
+
+def read_queries_list(path_to_query):
+    res = {}
+    with open(path_to_query, 'r') as f:
+        contents = f.readlines()
+
+    for line in contents:
+        qid, text, age, gender = line.strip().split("\t")
+        res[qid] = text
+    return res
+
+
+def read_collection(path_to_collection):
+    res = {}
+    with open(path_to_collection, 'r') as f:
+        contents = f.readlines()
+
+    for line in contents:
+        docid, text = line.strip().split("\t")
+        res[docid] = text
     return res

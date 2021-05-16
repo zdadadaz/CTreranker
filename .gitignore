@@ -10,3 +10,4 @@ upload/
 logs/
 pyserini/*
 output/
+data/
