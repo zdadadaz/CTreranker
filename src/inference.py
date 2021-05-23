@@ -18,7 +18,7 @@ def write_run_file(qids, scores, docids, output_path):
             docid = docids[j][k]
             trec_lines.append(str(qid) + " " + "Q0" + " " + str(docid) + " " + str(k + 1) + " " + str(score) + " " + "BERT" + "\n")
 
-        with open(output_path+'.res', "a+") as f:
+        with open(output_path, "a+") as f:
             f.writelines(trec_lines)
 
 
@@ -34,7 +34,7 @@ def inference(model, tokenizer, collection_path, dev_query_path, res_path, qrel_
     collection = rf.read_collection(collection_path)
 
     # clear out file
-    with open(output_path + '.res', "w") as f:
+    with open(output_path, "w") as f:
         f.writelines('')
 
     for qid in tqdm(qrel.keys(), desc="Ranking queries...."):
@@ -58,7 +58,7 @@ def inference(model, tokenizer, collection_path, dev_query_path, res_path, qrel_
                 batch_passages.append(collection[docid])
 
             inputs = tokenizer([query] * len(batch_passages), batch_passages,
-                               return_tensors='pt', padding=True, truncation=True, max_length=512).to(device)
+                               return_tensors='pt', padding='max_length', truncation=True, max_length=256).to(device)
             with torch.no_grad():
                 if isDataParallel:
                     scores = model.module.get_scores(inputs)

@@ -16,7 +16,6 @@ def main():
     np.random.seed(seed)
     torch.manual_seed(seed)
     # modelname = 'bm25_BERT', pretrained = 'base', lr_step_period = None, output = None
-    root_path = '../../data/TRECPM2017'
 
     args = argretrieve()
     pretrained = args.pretrained
@@ -43,14 +42,13 @@ def main():
     dev_dataset_path = "runs/{}_{}_test/pyserini_dev_demofilter_bm25_1000_test.res".format(eval_year, ir_method)
     dev_query_path = "data/year/queries_{}_test.txt".format(eval_year)
     dev_qrel_path = "data/year/qrels_{}_test.txt".format(eval_year)
-    qrel_out_path = 'data/year/qrels_{}_test.txt'.format(eval_year)
 
     device, output = None, None
 
     assert eval_year == '2017' or eval_year == '2018' or eval_year == '2019'
 
     if output is None:
-        output = os.path.join("output", "{}_{}_{}".format(eval_year, modelname,
+        output = os.path.join("output_v2", "{}_{}_{}".format(eval_year, modelname,
                                                           "pretrained_" + pretrained if pretrained else "random"))
     pathlib.Path(output).mkdir(parents=True, exist_ok=True)
 
@@ -69,10 +67,13 @@ def main():
     trainBERT = trainer(model, pretrained, output, batch_size, num_epochs, dataloaders, device, isFinetune, lr)
     trainBERT.train()
 
+    # checkpoint = torch.load('output/2017_bm25_BERT_length256_neg10_v2_kw_pretrained_BioBERT/best_ft.pt')
+    # model.load_state_dict(checkpoint['state_dict'])
+
     inference(model, tokenizer, dev_collection_path, dev_query_path, dev_dataset_path, dev_qrel_path, bert_out_path, 1)
 
-    trec_eval.eval_set(qrel_out_path, dev_dataset_path, os.path.join(output, ir_method))
-    trec_eval.eval_set(qrel_out_path, bert_out_path, os.path.join(output, modelname))
+    trec_eval.eval_set(dev_qrel_path, dev_dataset_path, os.path.join(output, ir_method))
+    trec_eval.eval_set(dev_qrel_path, bert_out_path, os.path.join(output, modelname))
 
 
 if __name__ == '__main__':

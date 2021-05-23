@@ -16,7 +16,6 @@ class Dataset(torch.utils.data.Dataset):
         self.qrel_dict = qrel_dict
         self.num_negative = num_negative
         fields = {
-            # 'contents': 'bt',
             'bs': 'bs',
             'bt': 'bt'
         }
@@ -56,7 +55,6 @@ class Dataset(torch.utils.data.Dataset):
             # append negative from top 1000
             for hit in hits[qid]:
                 if -cnt > tmpcnt * self.num_negative:  # limit to 10 times of postive case
-                    # if -cnt > 1000:
                     break
                 if hit.docid in m:
                     continue
@@ -128,35 +126,46 @@ class TrecPMDataset(torch.utils.data.Dataset):
             X, Xdoc, self.y, self.QDoc = self._gen_data_test(bert_k)
         self.encodings = tokenizer(X, Xdoc, return_tensors='pt', padding='max_length', truncation=True, max_length=256)
 
-
     def _gen_data_train(self):
         collection_doc_list = list(self.collection.keys())
         X, Xdoc, y, QDoc = [], [], [], []
+        m = set()
         for qid in tqdm(self.qrel_pos_dict.keys(), desc="Creating training set"):
             positives = self.qrel_pos_dict[qid].keys()
             top_results = copy.deepcopy(self.all_top_results[qid])
             negatives = list(set(top_results).difference(set(positives)))
+            cnt = 0
             for pos_docid in positives:
                 # positive sample
                 X.append(qid)
                 Xdoc.append(pos_docid)
                 y.append(1)
                 QDoc.append(qid + pos_docid)
+                m.add(pos_docid)
+                cnt += 1
                 # sample negatives for each pos pair
-                if len(negatives) >= self.num_neg_per_pos:
-                    rand_negatives = random.sample(negatives, self.num_neg_per_pos)
-                else:
-                    rand_negatives = random.sample(collection_doc_list, self.num_neg_per_pos)
-                for neg_docid in rand_negatives:
-                    X.append(qid)
-                    Xdoc.append(neg_docid)
-                    y.append(0)
-                    QDoc.append(qid + neg_docid)
+                # if len(negatives) >= self.num_neg_per_pos:
+                #     rand_negatives = random.sample(negatives, self.num_neg_per_pos)
+                # else:
+                #     rand_negatives = random.sample(collection_doc_list, self.num_neg_per_pos)
+                # for neg_docid in rand_negatives:
+            tmpcnt = cnt
+            for neg_docid in top_results:
+                if -cnt > tmpcnt * self.num_neg_per_pos:
+                    break
+                if neg_docid in m:
+                    continue
+                X.append(qid)
+                Xdoc.append(neg_docid)
+                y.append(0)
+                QDoc.append(qid + neg_docid)
+                cnt -= 1
+
         del self.all_top_results, collection_doc_list, self.qrel_pos_dict
         gc.collect()
         return X, Xdoc, y, QDoc
 
-    def _gen_data_test(self, bert_k):
+    def _gen_data_test(self):
         X, Xdoc, y, QDoc = [], [], [], []
         for qid in tqdm(self.top_k_results.keys(), desc="Creating testing set"):
             docids = self.top_k_results[qid]

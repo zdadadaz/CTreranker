@@ -18,7 +18,8 @@ def main():
     torch.manual_seed(seed)
     # modelname = 'bm25_BERT', pretrained = 'base', lr_step_period = None, output = None
     root_path = '../../data/TRECPM2017'
-    indexing_path = ['../pyserini/indexes/TRECPM2017_txt', '../pyserini/indexes/TRECPM2019_txt']
+    # indexing_path = ['../pyserini/indexes/TRECPM2017_txt', '../pyserini/indexes/TRECPM2019_txt']
+    indexing_path = ['../pyserini/indexes/TRECPM2017_txt_v2', '../pyserini/indexes/TRECPM2019_txt_v2']
     args = argretrieve()
     pretrained = args.pretrained
     lr = float(args.lr)
@@ -63,7 +64,7 @@ def main():
     # train val test split
     dataidx = init_split.split(eval_year, isFinetune)
 
-    # run IR method
+    # # run IR method
     dataloaders = runIRmethod(tokenizer, dataidx, query_dict, qrel_dict, indexing_path, output, bm25_k, bert_k,
                               ir_method, batch_size,
                               num_workers, device, num_negative)

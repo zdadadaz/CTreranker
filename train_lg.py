@@ -11,7 +11,7 @@ import os
 from utils.arg import argretrieve
 from src.inference import inference
 
-# os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 tokenizer = None
 
@@ -31,7 +31,7 @@ def collate_fn(batch):
 
 def main():
     seed_everything(313)
-    torch.multiprocessing.set_sharing_strategy('file_system')
+    # torch.multiprocessing.set_sharing_strategy('file_system')
     args = argretrieve()
     model_type = "bert-base-uncased"
     cache_dir = "../../cache"
@@ -54,7 +54,7 @@ def main():
     lr = 2e-5
     optimizer = 'adam'
     warm_up_steps_percent = 10
-    gpus_per_node = 2
+    gpus_per_node = 1
     num_nodes = 1
     num_epochs = 1
     num_neg_per_pos = 4
@@ -80,7 +80,7 @@ def main():
                                num_epochs=num_epochs)
 
     print("Training set size:", len(train_set))
-
+    print("save_path", save_path)
     callbacks = [CheckpointEveryEpoch(1, 1, 1, save_path),
                  LearningRateMonitor(logging_interval='step')]
 
@@ -109,10 +109,10 @@ def main():
                       num_nodes=num_nodes,
                       checkpoint_callback=False,
                       logger=tb_logger,
-                      amp_backend='apex',
-                      amp_level='O1',
-                      accelerator="ddp",
-                      plugins='ddp_sharded',
+                      # amp_backend='apex',
+                      # amp_level='O1',
+                      # accelerator="ddp",
+                      # plugins='ddp_sharded',
                       log_every_n_steps=10,
                       callbacks=callbacks,
                       )

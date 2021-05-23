@@ -40,3 +40,18 @@ def split_year(eval_year, isFinetune):
     dataidx = {'train': train_idx,'val':val_idx,'test':test_idx}
     return dataidx
 
+def split_ts(qids):
+    val_idx = []
+    train_idx = qids
+    train_idx, test_idx = train_test_split(train_idx, test_size=0.2, random_state=1)
+    dataidx = {'train': train_idx, 'val': val_idx, 'test': test_idx}
+    return dataidx
+
+def split_ts_cv(qids, numfold):
+    topics = np.array(qids)
+    kf = KFold(n_splits=numfold, shuffle=True, random_state=0)
+    res = []
+    for train_index, test_index in kf.split(topics):
+        dataidx = {'train': topics[train_index],'val':[],'test':topics[test_index]}
+        res.append(dataidx)
+    return res

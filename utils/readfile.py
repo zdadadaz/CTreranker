@@ -62,6 +62,21 @@ def read_topics(path_to_topics) -> dict:
     return topics
 
 
+def read_ts_topic(topic_dict, path_to_topics):
+    with open(path_to_topics, 'r') as f:
+        contents = f.readlines()
+
+    cur_topic_num = None
+    for line in contents:
+        if "<NUM>" in line:
+            cur_topic_num = line.strip().split('NUM>')[1][:-2]
+            if cur_topic_num not in topic_dict:
+                topic_dict[cur_topic_num] = {}
+                topic_dict[cur_topic_num]['text'] = ''
+
+        if "<TITLE>" in line:
+            topic_dict[cur_topic_num]['text'] += ' ' + line.strip().split('<TITLE>')[1]
+
 def concat_topics(arr):
     out = {}
     cnt = 1

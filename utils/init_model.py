@@ -30,10 +30,9 @@ class SimpleModel(nn.Module):
         return self.classifier(x)
 
     def get_scores(self, inputs):
-        x = self.bert(inputs)[1]
+        x = self.bert(**inputs)[1]
         logits = self.classifier(x)
         scores = torch.softmax(logits, dim=1)[:, 1]
-
         return scores
 
 

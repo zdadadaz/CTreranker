@@ -50,7 +50,7 @@ def main():
     query_dict = rf.concat_topics(topics)
     qrel_dict = rf.concat_topics(qrels)
 
-    indexing_path = ['../pyserini/indexes/TRECPM2017_txt', '../pyserini/indexes/TRECPM2019_txt']
+    indexing_path = ['../pyserini/indexes/TRECPM2017_txt_v2', '../pyserini/indexes/TRECPM2019_txt_v2']
     params = {
         'pretrained': 'base',
         'bm25_k': 1000,

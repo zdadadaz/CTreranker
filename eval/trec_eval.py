@@ -15,7 +15,7 @@ def eval_set(qrel, res, output=None):
     # res = 'output/2019_bm25_BERT_pretrained_base/pyserini_dev_demofilter_bm25_1000_test.res'
     # print("Evaluation for ", output)
     # cmd = '../trec_eval-9.0.7/trec_eval -m map -m P.10 -m Rprec -m ndcg -m recip_rank {} {}'.format(qrel, res)
-    # cmd = '../trec_eval-9.0.7/trec_eval -q -m P.10 {} {}'.format(qrel, res)
+    # cmd = '../trec_eval-9.0.7/trec_eval -q {} {} > {}'.format(qrel, res, os.path.join(output, '_q.eval'))
     # os.system(cmd)
 
     # '-m', 'P.10'
@@ -66,7 +66,7 @@ def get_eval_result(output):
 
 
 def combine_all_eval(output, include_dirs, outname):
-    dirs = [d for r, d, f in os.walk('output') if len(d) > 0][0]
+    dirs = [d for r, d, f in os.walk(output) if len(d) > 0][0]
     res = {'model': [], 'method': [], 'map': [], 'Rprec': [], 'recip_rank': [], 'P_5': [], 'P_10': [], 'P_15': [],
            'ndcg': []}
     for d in dirs:
@@ -80,3 +80,27 @@ def combine_all_eval(output, include_dirs, outname):
                 res[key].append(value)
     df = pd.DataFrame.from_dict(res)
     df.to_csv(os.path.join(output, outname + '_eval.csv'), index=False)
+
+
+def average_all_cv_eval(output, include_dirs, outname):
+    dirs = [d for r, d, f in os.walk(output) if len(d) > 0][0]
+    res = {'model': [], 'method': [], 'map': [], 'Rprec': [], 'recip_rank': [], 'P_5': [], 'P_10': [], 'P_15': [],
+           'ndcg': []}
+    for d in dirs:
+        if d not in include_dirs:
+            continue
+        tmp = get_eval_result(os.path.join(output, d))
+        for i in tmp.keys():
+            res['model'].append(d)
+            res['method'].append(i)
+            for key, value in tmp[i].items():
+                res[key].append(float(value))
+    df = pd.DataFrame.from_dict(res)
+
+    # average
+    df_out = pd.DataFrame([],[],columns=df.drop('model',axis=1).columns)
+    for name in df['method'].unique():
+        tmp = df[df['method']==name].drop(['model','method'], axis=1).agg("mean", axis="rows").to_frame().T
+        tmp['method'] = name
+        df_out= df_out.append(tmp, ignore_index=True)
+    df_out.to_csv(os.path.join(output, outname + '.csv'), index=False, float_format='%.4f')
