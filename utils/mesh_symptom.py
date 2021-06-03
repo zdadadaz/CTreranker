@@ -1,25 +1,22 @@
 import os
+# os.system('pip install wikipedia wptools')
 import xml.etree.ElementTree as ET
 import pathlib
 import json
 import re
-import argparse
 from multiprocessing import Pool, cpu_count
-
-year = '2017'
+import wikipedia
+import wptools
+wikipedia.set_lang("En")
 outfilename = None
 
-
-def save_json(f):
+def mesh_fn(f):
     fn = f.split('/')[-1][:-4]
     out_path = '/'.join(f.replace('clinicaltrials_xml', outfilename).split('/')[:-1])
     pathlib.Path(out_path).mkdir(parents=True, exist_ok=True)
-    # print('test',out_path, fn)
-    # print(f,fn)
     tree = ET.parse(f)
     root = tree.getroot()
     res = {'gender': '', 'min_age': '', 'max_age': '', 'criteria': ''}
-    res['year'] = year
     res['id'] = fn
     res['contents'] = ''
     for child in root:
@@ -36,7 +33,7 @@ def save_json(f):
             res['dd'] = re.sub(r"  ", "", res['dd'])
             res['contents'] += ' ' + res['dd']
         elif child.tag.lower() == 'official_title':
-            if len(child.text)!= 0:
+            if len(child.text) != 0:
                 res['ot'] = re.sub(r"[\n\t\r]*", "", child.text)
                 res['ot'] = re.sub(r"  ", "", res['ot'])
                 res['contents'] += ' ' + res['ot']
@@ -83,43 +80,41 @@ def save_json(f):
                     else:
                         res['max_age'] = c.text[:-6] if c.text != 'N/A' else 'N/A'
                     res['contents'] += ' ' + c.text
+        elif child.tag.lower() == 'condition_browse':
+            symptoms = []
+            for c in child:
+                try:
+                    search_res = wikipedia.search(c.text, results=3)
+                    so = wptools.page(search_res[0], silent=True).get_parse()
+                    infobox = so.data['infobox']['symptoms']
+                    for j in infobox.split(','):
+                        symptoms.append(j.strip().replace('[','').replace(']',''))
+                except:
+                    pass
+                    # print(c.text, wikipedia.search(c.text, results=3))
+            if len(symptoms) != 0:
+                res['contents'] += ' ' + ', '.join(symptoms)
+                res['symptoms'] = ', '.join(symptoms)
     json_object = json.dumps(res, indent=2)
     with open(os.path.join(out_path, fn + '.json'), "w") as outfile:
         outfile.write(json_object)
 
 
 def main():
-    args = argretrieve()
-    root = args.IPath
-    out_path = args.OPath
-    global year
     global outfilename
-    year = args.yr
-    if len(out_path.split('/')[-1]) > 0:
-        outfilename = out_path.split('/')[-1]
-    else:
-        outfilename = out_path.split('/')[-2]
-    # root = '../../data/test_collection/clinicaltrials_xml/'
-    # out_path = '../../data/test_collection/clinicaltrials_json_bt/'
-
+    outfilename = 'clinicaltrials_json_sym'
+    root = '../../data/test_collection/clinicaltrials_xml/'
+    out_path = root.replace('clinicaltrials_xml', outfilename)
     pathlib.Path(out_path).mkdir(parents=True, exist_ok=True)
     filelist = []
     for path, subdirs, files in os.walk(root):
         for name in files:
             if name[0] != '.' and name.split('.')[-1] == 'xml': # and name == 'NCT00046436.xml':
                 filelist.append(os.path.join(path, name))
-
+    # mesh_fn(filelist[1])
     pool = Pool(processes=(cpu_count() - 1))
-    pool.map(save_json, filelist)
+    pool.map(mesh_fn, filelist)
     pool.close()
-
-
-def argretrieve():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--IPath', help="Source Path for indexing")
-    parser.add_argument('--OPath', help="Out Path for indexing")
-    parser.add_argument('--yr', help="year of TREC PM")
-    return parser.parse_args()
 
 
 if __name__ == '__main__':

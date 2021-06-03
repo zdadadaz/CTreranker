@@ -16,9 +16,7 @@ def main():
     seed = 0
     np.random.seed(seed)
     torch.manual_seed(seed)
-    # modelname = 'bm25_BERT', pretrained = 'base', lr_step_period = None, output = None
     root_path = '../../data/test_collection'
-    # indexing_path = ['../pyserini/indexes/TRECPM2017_txt', '../pyserini/indexes/TRECPM2019_txt']
     indexing_path = ['../pyserini/indexes/test_collection']
     args = argretrieve_ts()
     pretrained = args.pretrained
@@ -28,8 +26,10 @@ def main():
     isFinetune = int(args.isFinetune)
     num_epochs = int(args.num_epochs)
     bert_k = int(args.bert_k)  # 50
-    query_type = args.query_type  # '2019'
+    query_type = args.query_type
+    top_k_boolean = args.top_k_boolean
     ir_method = args.irmethod + '_ft' if isFinetune else args.irmethod  # 'bm25'
+    ir_method = ir_method + '_' + query_type
     modelname = args.model_name
     num_negative = int(args.num_negative)
     path_to_trained_model = args.path_to_pretrain
@@ -40,13 +40,14 @@ def main():
 
     query_dict = {}
     qrel_dict = rf.read_qrel(root_path + '/qrels-clinical_trials.tsv')
-    if query_type == 'bs':
+    if 'bs' in query_type:
         rf.read_ts_topic(query_dict, root_path + '/topics-2014_2015-summary.topics')
-    elif query_type == 'dd':
+    if 'dd' in query_type:
         rf.read_ts_topic(query_dict, root_path + '/topics-2014_2015-description.topics')
-    else:
-        rf.read_ts_topic(query_dict, root_path + '/topics-2014_2015-summary.topics')
-        rf.read_ts_topic(query_dict, root_path + '/topics-2014_2015-description.topics')
+    if 'bl' in query_type:
+        rf.read_ts_boolean(query_dict, top_k_boolean, root_path + '/boolean_qid.json')
+
+
     del query_dict['201428']  # non relevance
 
     if output is None:

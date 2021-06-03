@@ -15,10 +15,10 @@ def eval_set(qrel, res, output=None):
     # res = 'output/2019_bm25_BERT_pretrained_base/pyserini_dev_demofilter_bm25_1000_test.res'
     # print("Evaluation for ", output)
     # cmd = '../trec_eval-9.0.7/trec_eval -m map -m P.10 -m Rprec -m ndcg -m recip_rank {} {}'.format(qrel, res)
-    # cmd = '../trec_eval-9.0.7/trec_eval -q {} {} > {}'.format(qrel, res, os.path.join(output, '_q.eval'))
-    # os.system(cmd)
+    cmd = '../trec_eval-9.0.7/trec_eval -q {} {} > {}'.format(qrel, res, output + '.qeval')
+    os.system(cmd)
 
-    # '-m', 'P.10'
+    # '-m', 'P.10' '-m', 'recall'
     cmds = [['../trec_eval-9.0.7/trec_eval', '-m', 'map', '-m', 'P.5', '-m', 'ndcg', '-m', 'Rprec', '-m', 'recip_rank',
              qrel, res],
             ['../trec_eval-9.0.7/trec_eval', '-m', 'P.10', qrel, res],
@@ -69,6 +69,10 @@ def combine_all_eval(output, include_dirs, outname):
     dirs = [d for r, d, f in os.walk(output) if len(d) > 0][0]
     res = {'model': [], 'method': [], 'map': [], 'Rprec': [], 'recip_rank': [], 'P_5': [], 'P_10': [], 'P_15': [],
            'ndcg': []}
+    # res = {'model': [], 'method': [], 'map': [], 'Rprec': [], 'recip_rank': [], 'P_5': [], 'P_10': [], 'P_15': [],
+    #        'ndcg': [], 'recall_5': [], 'recall_10': [], 'recall_15': [], 'recall_20': [], 'recall_30': [],
+    #        'recall_100': [],
+    #        'recall_200': [], 'recall_500': [], 'recall_1000': []}
     for d in dirs:
         if d not in include_dirs:
             continue
@@ -77,10 +81,26 @@ def combine_all_eval(output, include_dirs, outname):
             res['model'].append(d)
             res['method'].append(i)
             for key, value in tmp[i].items():
-                res[key].append(value)
+                if key in res:
+                    res[key].append(value)
     df = pd.DataFrame.from_dict(res)
     df.to_csv(os.path.join(output, outname + '_eval.csv'), index=False)
 
+def combine_all_eval_one_dir(output, include_files, outname):
+    files = [os.path.join(r, name) for r, d, f in os.walk(output) for name in f if name[0]!= '.' and name[-5:]=='.eval']
+    res = {'model': [], 'map': [], 'Rprec': [], 'recip_rank': [], 'P_5': [], 'P_10': [], 'P_15': [],
+           'ndcg': [], 'recall_5': [], 'recall_10': [], 'recall_15': [], 'recall_20': [], 'recall_30': [], 'recall_100': [],
+           'recall_200': [], 'recall_500': [], 'recall_1000': []}
+    for f in files:
+        # if f not in include_files:
+        #     continue
+        fn = f.split('/')[-1][:-5]
+        tmp = rf.read_eval(f)
+        res['model'].append(fn)
+        for key, value in tmp.items():
+            res[key].append(value)
+    df = pd.DataFrame.from_dict(res)
+    df.to_csv(os.path.join(output, outname + '_eval.csv'), index=False)
 
 def average_all_cv_eval(output, include_dirs, outname):
     dirs = [d for r, d, f in os.walk(output) if len(d) > 0][0]
@@ -98,9 +118,9 @@ def average_all_cv_eval(output, include_dirs, outname):
     df = pd.DataFrame.from_dict(res)
 
     # average
-    df_out = pd.DataFrame([],[],columns=df.drop('model',axis=1).columns)
+    df_out = pd.DataFrame([], [], columns=df.drop('model', axis=1).columns)
     for name in df['method'].unique():
-        tmp = df[df['method']==name].drop(['model','method'], axis=1).agg("mean", axis="rows").to_frame().T
+        tmp = df[df['method'] == name].drop(['model', 'method'], axis=1).agg("mean", axis="rows").to_frame().T
         tmp['method'] = name
-        df_out= df_out.append(tmp, ignore_index=True)
+        df_out = df_out.append(tmp, ignore_index=True)
     df_out.to_csv(os.path.join(output, outname + '.csv'), index=False, float_format='%.4f')

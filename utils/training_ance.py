@@ -53,12 +53,14 @@ class trainer():
             return epoch_resume, bestLoss
 
     def train(self):
+
         with open(os.path.join(self.output, "log.csv"), "a") as f:
             epoch_resume, bestLoss = 0, float("inf")
-            if not self.isFineTune:
-                epoch_resume, bestLoss = self._train_init_(f)
-            else:
-                f.write("Starting fine-tune from trained best\n")
+            # if not self.isFineTune:
+            epoch_resume, bestLoss = self._train_init_(f)
+            # if epoch_resume == 0:
+            #     f.write("Starting fine-tune from trained best\n")
+
             # Train one epoch
             for epoch in range(epoch_resume, self.num_epochs):
                 print("Epoch #{}".format(epoch), flush=True)
@@ -213,6 +215,6 @@ class trainer():
             single = []
             for qid in res:
                 single.append(res[qid][eval])
-            out[eval] = sum(single) / len(single)
+            out[eval] = sum(single)/len(single)
         return out
 

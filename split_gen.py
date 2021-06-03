@@ -53,7 +53,7 @@ def main():
     indexing_path = ['../pyserini/indexes/TRECPM2017_txt_v2', '../pyserini/indexes/TRECPM2019_txt_v2']
     params = {
         'pretrained': 'base',
-        'bm25_k': 1000,
+        'bm25_k': 1500,
         'bert_k': 50,
         'IR_method': 'bm25'
     }
@@ -65,7 +65,7 @@ def main():
 
     for year in range(2017, 2020):
         dataidx = init_split.split(str(year), 1)
-        pathlib.Path('data/year/collection/').mkdir(parents=True, exist_ok=True)
+        pathlib.Path('data/year_bm25_2500/collection/').mkdir(parents=True, exist_ok=True)
         for phase in dataidx.keys():
             if len(dataidx[phase]) == 0:
                 continue

@@ -1,6 +1,7 @@
 from tqdm import tqdm
 import xml.etree.ElementTree as ET
 from collections import defaultdict
+import json
 
 
 def read_qrel(path_to_qrel) -> dict:
@@ -77,6 +78,35 @@ def read_ts_topic(topic_dict, path_to_topics):
         if "<TITLE>" in line:
             topic_dict[cur_topic_num]['text'] += ' ' + line.strip().split('<TITLE>')[1]
 
+
+def read_ts_boolean(query_dict, topkquery, path_to_topics):
+    with open(path_to_topics, 'r') as j:
+        adhoc_dict = json.loads(j.read())
+
+    for adhoc in adhoc_dict:
+        if adhoc['qqid'] not in query_dict:
+            query_dict[adhoc['qqid']] = {}
+            query_dict[adhoc['qqid']]['text'] = ''
+        tmp = ''
+        for j in adhoc['keywords']:
+            if int(j['order']) <= topkquery:
+                tmp += ', ' + j['keywords']
+        query_dict[adhoc['qqid']]['text'] += tmp[2:] if len(query_dict[adhoc['qqid']]['text']) == 0 else tmp
+
+
+def read_topics_ct21(path_to_topics) -> dict:
+    '''
+    return a dict that maps qid, content pair
+    '''
+    topics = defaultdict(dict)
+    tree = ET.parse(path_to_topics)
+    root = tree.getroot()
+    for topic in root:
+        idx = topic.attrib['number']
+        topics[idx] = topic.text
+    return topics
+
+
 def concat_topics(arr):
     out = {}
     cnt = 1
@@ -118,7 +148,17 @@ def read_result(path_to_result) -> dict:
     return res
 
 
-def read_result_topK(path_to_result, qids, k=None) -> dict:
+def read_doc_names(path_to_docName):
+    res = []
+    with open(path_to_docName, 'r') as f:
+        contents = f.readlines()
+    for line in contents:
+        name = line.strip()
+        res.append(name)
+    return res
+
+
+def read_result_topK(path_to_result, k=None) -> dict:
     '''
     return a dict that maps qid ranking result
     '''
@@ -133,14 +173,13 @@ def read_result_topK(path_to_result, qids, k=None) -> dict:
         qid, _, docid, rank, score, name = line.strip().split("\t")
         if int(rank) > k:
             continue
-        if qid not in qids:
-            continue
         if qid in res.keys():
             pass
         else:
             res[qid] = []
         res[qid].append(docid)
     return res
+
 
 def read_result_topK_pair(path_to_result, qids, k=None) -> list:
     '''

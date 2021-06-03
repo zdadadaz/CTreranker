@@ -52,6 +52,7 @@ def model_init(device, pretrained, isFinetune, output, path_to_trained_model):
     elif pretrained == 'BioBERT':
         tokenizer = AutoTokenizer.from_pretrained("dmis-lab/biobert-base-cased-v1.1")
         bert = AutoModel.from_pretrained("dmis-lab/biobert-base-cased-v1.1")
+        # bert = bert.from_pretrained(path_to_trained_model)
         model = SimpleModel(bert)
     elif pretrained == 'ClinicalBERT':
         tokenizer = AutoTokenizer.from_pretrained("emilyalsentzer/Bio_ClinicalBERT")
@@ -64,12 +65,22 @@ def model_init(device, pretrained, isFinetune, output, path_to_trained_model):
     else:
         raise Exception("Not matched pretrained model")
 
-    if path_to_trained_model:
-        try:
-            checkpoint = torch.load(os.path.join(path_to_trained_model, "best.pt"))['state_dict']
-            model.load_state_dict(checkpoint)
-        except:
-            raise Exception("{} pretrained key not match".format(pretrained))
+    # if path_to_trained_model:
+    #     try:
+    #         checkpoint = torch.load(path_to_trained_model)['state_dict']
+    #         with torch.no_grad():
+    #             for name, param in model.named_parameters():
+    #                 param.requires_grad = True
+    #                 if 'module.'+name in checkpoint:
+    #                     param.copy_(checkpoint['module.'+name])
+    #                 elif name in checkpoint:
+    #                     param.copy_(checkpoint[name])
+    #                 else:
+    #                     print('name {} not in checkpoint', name)
+    #         # model.load_state_dict(checkpoint)
+    #     except:
+    #         raise Exception("{} pretrained key not match".format(pretrained))
+
 
     # if isFinetune:  # load best model to fine tune
     #     for name, param in model.named_parameters():

@@ -12,4 +12,6 @@ pyserini/*
 output/
 output_lg/
 output_no_ot_kw
+output_*/
 data/
+notebook/
