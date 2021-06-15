@@ -8,11 +8,11 @@ from utils import writefile as wf
 #
 # trec_eval.eval_set(qrel_out_path, res, outlog)
 
-models = ['base', 'BioBERT', 'BlueBERT', 'ClinicalBERT', 'SciBERT']
-# models = ['base']
-outnames = ['length256_neg10_{}_{}_{}'.format(i,j,z) for i in ['all', 'judged','unjudged'] for j in ['bert', 'bm25', 'random'] for z in ['none','bm25','otjudged']]
-dirs = ['{}_bm25_BERT_{}_pretrained_{}'.format(str(i), outname, model) for i in range(2017, 2020) for outname in outnames for model in models]
-out = trec_eval.combine_all_eval('output_judge', dirs, 'year_neg_kw_neg10_BioBERT_judge_1500_eval')
+# models = ['base', 'BioBERT', 'BlueBERT', 'ClinicalBERT', 'SciBERT']
+# # models = ['base']
+# outnames = ['length256_neg10_{}_{}_{}'.format(i,j,z) for i in ['all', 'judged','unjudged'] for j in ['bert', 'bm25', 'random'] for z in ['none','bm25','otjudged']]
+# dirs = ['{}_bm25_BERT_{}_pretrained_{}'.format(str(i), outname, model) for i in range(2017, 2020) for outname in outnames for model in models]
+# out = trec_eval.combine_all_eval('output_judge', dirs, 'year_neg_kw_neg10_BioBERT_judge_1500_eval')
 
 # models = ['base', 'BioBERT', 'BlueBERT', 'ClinicalBERT', 'SciBERT']
 # # models = ['base']
@@ -20,5 +20,4 @@ out = trec_eval.combine_all_eval('output_judge', dirs, 'year_neg_kw_neg10_BioBER
 # dirs = ['{}_bm25_BERT_{}_pretrained_{}'.format(str(i), outname, model) for i in range(2017, 2020) for outname in outnames for model in models]
 # out = trec_eval.combine_all_eval('output', dirs, 'year_neg_kw_neg10_BioBERT_baseline_disease_eval')
 
-# out = trec_eval.combine_all_eval_one_dir('output_tc_bm25_ft_sym', [], 'bm25_ft')
-
+out = trec_eval.combine_all_eval_one_dir('output_tc_bm25_ft_sym_cond_fields_pick', [], 'bm25_ft')

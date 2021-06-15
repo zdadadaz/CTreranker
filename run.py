@@ -16,17 +16,21 @@ from eval import trec_eval
 # dirs = ['cv{}'.format(str(i)) for i in range(2)]
 # trec_eval.average_all_cv_eval('output_ts/bs_noName_pretrained_base', dirs, 'overall_cv.eval')
 
-import os
-import pandas
-filelist = []
-root = 'output_ts'
-df_out = pd.DataFrame(columns=['method', 'map', 'Rprec', 'recip_rank', 'P_5', 'P_10', 'P_15', 'ndcg'])
-for path, subdirs, files in os.walk(root):
-    for name in files:
-        if name[0] != '.' and name == 'overall_cv.eval.csv':
-            # print(os.path.join(path, name))
-            df_out = df_out.append(pd.read_csv(os.path.join(path, name)))
-            # filelist.append(os.path.join(path, name))
-df_out.to_csv(root + '/overall_disease_ts.csv', index=False)
+# import os
+# import pandas
+# filelist = []
+# root = 'output_ts'
+# df_out = pd.DataFrame(columns=['method', 'map', 'Rprec', 'recip_rank', 'P_5', 'P_10', 'P_15', 'ndcg'])
+# for path, subdirs, files in os.walk(root):
+#     for name in files:
+#         if name[0] != '.' and name == 'overall_cv.eval.csv':
+#             # print(os.path.join(path, name))
+#             df_out = df_out.append(pd.read_csv(os.path.join(path, name)))
+#             # filelist.append(os.path.join(path, name))
+# df_out.to_csv(root + '/overall_disease_ts.csv', index=False)
 
+from utils import simpleretrieve
+
+if __name__ == '__main__':
+    simpleretrieve.simple()
 

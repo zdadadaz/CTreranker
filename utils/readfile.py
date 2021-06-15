@@ -26,6 +26,7 @@ def read_qrel(path_to_qrel) -> dict:
     return qrel
 
 
+
 def read_qrel_list(path_to_qrel) -> dict:
     """
     return a dictionary that maps qid, docid pair to its relevance label.
@@ -113,10 +114,6 @@ def concat_topics(arr):
     yr = 2017
     # num_topic = [30,50,40]
     for j in range(len(arr)):
-        # for i in range(1,num_topic[j]+1):
-        #     if str(i) in arr[j].keys():
-        #     else:
-        #       out[str(cnt)] = None
         for i in arr[j]:
             arr[j][str(i)]['year'] = str(yr + j)
             arr[j][str(i)]['orgid'] = str(i)

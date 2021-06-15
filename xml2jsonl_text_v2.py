@@ -59,15 +59,20 @@ def save_json(f):
                 res['primary_outcome'] = ', '.join(tmp)
             res['contents'] += ' ' + res['primary_outcome']
         elif child.tag.lower() == 'intervention':
-            res['intervention_type'] = child[0].text
-            res['intervention_name'] = child[1].text
-            res['contents'] += ' ' + res['intervention_type']
+            if 'intervention_type' in res:
+                res['intervention_type'] += ' ' + child[0].text
+                res['intervention_name'] += ' ' + child[1].text
+            else:
+                res['intervention_type'] = child[0].text
+                res['intervention_name'] = child[1].text
+            res['contents'] += ' ' + child[0].text
         elif child.tag.lower() == 'eligibility':
             for c in child:
                 if c.tag.lower() == 'criteria':
-                    res['criteria'] = re.sub(r"[\n\t\r]*", "", c[0].text.lower().strip())
-                    res['criteria'] = re.sub(r"  ", "", res['criteria'])
-                    res['contents'] += ' ' + res['criteria']
+                    # res['criteria'] = re.sub(r"[\n\t\r]*", "", c[0].text.lower().strip())
+                    # res['criteria'] = re.sub(r"  ", "", res['criteria'])
+                    # res['contents'] += ' ' + res['criteria']
+                    res['criteria'] = c[0].text
                 elif c.tag.lower() == 'gender':
                     res['gender'] = c.text
                     res['contents'] += ' ' + res['gender']
@@ -76,22 +81,36 @@ def save_json(f):
                         res['min_age'] = c.text.split(' ')[0]
                     else:
                         res['min_age'] = c.text[:-6] if c.text != 'N/A' else 'N/A'
+                    # need remove after test
+                    # res['min_age'] = c.text
                     res['contents'] += ' ' + c.text
                 elif c.tag.lower() == 'maximum_age':
                     if 'year' in c.text.lower():
                         res['max_age'] = c.text.split(' ')[0]
                     else:
                         res['max_age'] = c.text[:-6] if c.text != 'N/A' else 'N/A'
+                    # need remove after test
+                    # res['max_age'] = c.text
                     res['contents'] += ' ' + c.text
+        elif child.tag.lower() == 'condition':
+            if 'condition' not in res:
+                res['condition'] = child.text
+            else:
+                res['condition'] += ', ' + child.text
+            res['contents'] += ' ' + child.text
+
     json_object = json.dumps(res, indent=2)
     with open(os.path.join(out_path, fn + '.json'), "w") as outfile:
         outfile.write(json_object)
-
 
 def main():
     args = argretrieve()
     root = args.IPath
     out_path = args.OPath
+
+    # root = '../../data/test_collection/clinicaltrials_xml_new/'
+    # out_path = '../../data/test_collection/clinicaltrials_json/'
+
     global year
     global outfilename
     year = args.yr
@@ -99,8 +118,6 @@ def main():
         outfilename = out_path.split('/')[-1]
     else:
         outfilename = out_path.split('/')[-2]
-    # root = '../../data/test_collection/clinicaltrials_xml/'
-    # out_path = '../../data/test_collection/clinicaltrials_json_bt/'
 
     pathlib.Path(out_path).mkdir(parents=True, exist_ok=True)
     filelist = []
@@ -114,11 +131,12 @@ def main():
     pool.close()
 
 
+
 def argretrieve():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--IPath', help="Source Path for indexing")
-    parser.add_argument('--OPath', help="Out Path for indexing")
-    parser.add_argument('--yr', help="year of TREC PM")
+    parser.add_argument('--IPath', help="Source Path for indexing", default=None)
+    parser.add_argument('--OPath', help="Out Path for indexing", default=None)
+    parser.add_argument('--yr', help="year of TREC PM", default='2016')
     return parser.parse_args()
 
 

@@ -19,7 +19,7 @@ def eval_set(qrel, res, output=None):
     os.system(cmd)
 
     # '-m', 'P.10' '-m', 'recall'
-    cmds = [['../trec_eval-9.0.7/trec_eval', '-m', 'map', '-m', 'P.5', '-m', 'ndcg', '-m', 'Rprec', '-m', 'recip_rank',
+    cmds = [['../trec_eval-9.0.7/trec_eval', '-m', 'recall', '-m', 'map', '-m', 'P.5', '-m', 'ndcg', '-m', 'Rprec', '-m', 'recip_rank',
              qrel, res],
             ['../trec_eval-9.0.7/trec_eval', '-m', 'P.10', qrel, res],
             ['../trec_eval-9.0.7/trec_eval', '-m', 'P.15', qrel, res]]
